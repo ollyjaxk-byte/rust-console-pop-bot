@@ -25,19 +25,20 @@ function dashboard(d, meta = {}) {
   const updated = meta.at || Date.now();
   const stale = Boolean(meta.error);
   const count = Number.isFinite(Number(d.current)) ? Number(d.current) : d.rows.length;
-  const e = brand('NEON POP // ' + val(d.serverName))
-    .setDescription('**🟣 LIVE RUST CONSOLE POPULATION**\n' + (count === 0 ? '**0** survivors online\n\n🟢 Server is reachable — nobody is online right now.' : '**' + count + '** survivors online') + (stale ? '\n⚠️ Showing the last successful snapshot.' : ''))
+  const status = stale ? '🟠 DELAYED' : '🟢 LIVE';
+  const e = brand('☢️ POP // LIVE SIGNAL')
+    .setDescription('**NEON PURPLE // RUST CONSOLE**\n\n' + (count === 0 ? '## 0 ONLINE\n🟢 The server is quiet right now.' : '## ' + count + ' ONLINE\n🔥 Survivors are active.'))
     .addFields(
-      { name: '📡 RCON feed', value: stale ? '🟠 Stale' : '🟢 Live', inline: true },
-      { name: '🕒 Last checked', value: '<t:' + Math.floor(updated / 1000) + ':R>', inline: true },
-      { name: '🧑‍🚀 Players returned', value: String(d.rows.length), inline: true },
+      { name: '📡 STATUS', value: status, inline: true },
+      { name: '🕒 CHECKED', value: '<t:' + Math.floor(updated / 1000) + ':R>', inline: true },
+      { name: '🧑‍🚀 ROSTER', value: String(d.rows.length) + ' listed', inline: true },
     );
   if (d.rows.length) {
-    e.addFields({ name: 'SURVIVORS ONLINE', value: d.rows.slice(0, 20).map((p, i) => '**' + (i + 1) + '. ' + val(p.name, 'Survivor') + '**\n🎮 ' + val(p.platform) + ' • ' + val(p.playing)).join('\n\n').slice(0, 3900) });
+    e.addFields({ name: '╔══ SURVIVORS ONLINE ══╗', value: d.rows.slice(0, 20).map((p, i) => '『' + String(i + 1).padStart(2, '0') + '』 **' + val(p.name, 'Survivor') + '**\n　🎮 ' + val(p.platform, 'Console') + '  •  ' + val(p.playing, 'Rust Console')).join('\n\n').slice(0, 3900) });
   } else {
-    e.addFields({ name: 'SURVIVORS ONLINE', value: count === 0 ? 'No players are currently connected.' : 'RCON returned no individual player rows.' });
+    e.addFields({ name: '╔══ SURVIVORS ONLINE ══╗', value: count === 0 ? '╰─ No survivors detected. The coast is empty.' : '╰─ No individual roster was returned.' });
   }
-  e.addFields({ name: 'SOURCE NOTE', value: 'Population and player details are read from the configured RCON server. No names or activity are invented.' });
+  e.addFields({ name: '🔒 PRIVACY', value: 'Live population only. Server address, port, region, credentials, and private configuration are never shown here.' });
   return e;
 }
 
@@ -53,7 +54,7 @@ const serverModal=()=>new ModalBuilder().setCustomId('server_modal').setTitle('�
  new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('description').setLabel('Description (optional)').setPlaceholder('A short description for this server').setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(500))
 );
 const credentialModal=()=>new ModalBuilder().setCustomId('credential_modal').setTitle('🔐 RCON credentials').addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('rco_password').setLabel('RCON password').setPlaceholder('Entered privately — never posted').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(200)));
-const profileCard=(p)=>brand('SERVER PROFILE // LIVE CONNECTION').setDescription('The bot uses these details for live RCON checks. Secrets stay hidden.').addFields({name:'🧱 Server',value:p.name,inline:true},{name:'📍 RCON endpoint',value:p.ip+':'+(p.rconPort||'—'),inline:true},{name:'🌎 Region',value:p.region,inline:true},{name:'📝 Description',value:p.description||'No description'}, {name:'🔐 Credentials',value:'Configured • hidden',inline:true});
+const profileCard=(p)=>brand('SERVER PROFILE // PRIVATE').setDescription('Configuration is restricted to the server owner. Sensitive connection details are redacted from this view.').addFields({name:'🧱 Server',value:p.name,inline:true},{name:'🔐 RCON',value:p.rconPassword?'Configured • hidden':'Not configured',inline:true},{name:'🛡️ Visibility',value:'Owner-only',inline:true},{name:'📝 Description',value:p.description||'No description'});
 async function status(){const e=brand('POP STATUS').addFields({name:'Source configured',value:process.env.RUST_STATUS_URL?'✅ Yes':'❌ No',inline:true},{name:'Connection',value:cache.error?'🔴 Error':cache.data?'🟢 Healthy':'⚪ Not checked',inline:true},{name:'Last update',value:cache.at?'<t:'+Math.floor(cache.at/1000)+':R>':'Never',inline:true});if(cache.error)e.addFields({name:'Safe error',value:cache.error.slice(0,900)});return e;}
 client.on('interactionCreate', async (i) => {
   try {
