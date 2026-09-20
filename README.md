@@ -1,4 +1,4 @@
-# RustPulse Pop
+# test
 
 A free neon-purple Discord bot for Rust Console population monitoring. Built for clean live dashboards, private staff tools, RCON checks, player search, and polished rules/terms panels.
 
