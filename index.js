@@ -75,4 +75,18 @@ client.on('interactionCreate', async (i) => {
     if (i.isStringSelectMenu() && i.customId === 'setup') { if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Owner only.', ephemeral: true }); config.set(i.guild.id, i.values[0]); return i.update({ embeds: [brand('SETUP SAVED').setDescription('Automatic updates: **' + i.values[0] + '**')], components: [] }); }
   } catch (error) { console.error('[interaction]', error); if (!i.replied && !i.deferred) await i.reply({ content: '⚠️ Unexpected error. Check hosting logs.', ephemeral: true }); }
 });
-client.once('ready',()=>{console.log('Rust Console Pop online as '+client.user.tag);setInterval(async()=>{for(const [guildId,mode] of config){if(mode!=='bio'&&mode!=='both')continue;try{const d=await getPop(guildId);client.user.setPresence({activities:[{name:(d.current??'—')+' online • /pop'}],status:'online'});}catch(e){console.error('[bio]',e.message);}},refreshMs);}); await client.login(process.env.DISCORD_TOKEN);
+client.once('ready', () => {
+  console.log('Rust Console Pop online as ' + client.user.tag);
+  setInterval(async () => {
+    for (const [guildId, mode] of config) {
+      if (mode !== 'bio' && mode !== 'both') continue;
+      try {
+        const d = await getPop(guildId);
+        client.user.setPresence({ activities: [{ name: (d.current ?? '—') + ' online • /pop' }], status: 'online' });
+      } catch (error) {
+        console.error('[bio]', error.message);
+      }
+    }
+  }, refreshMs);
+});
+await client.login(process.env.DISCORD_TOKEN);
