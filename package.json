@@ -1,5 +1,5 @@
 {
-  "name": "rust-console-pop-bot",
+  "name": "rustpulse-pop-bot",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
@@ -11,5 +11,6 @@
     "discord.js": "^14.22.1",
     "dotenv": "^16.6.1",
     "ws": "^8.18.0"
-  }
+  },
+  "description": "RustPulse Pop — free Rust Console population Discord bot"
 }
