@@ -21,7 +21,26 @@ async function fetchRcon(guildId){const p=serverProfiles.get(guildId);if(!p)thro
 async function getPop(guildId){const hit=rconCache.get(guildId);if(hit&&Date.now()-hit.at<refreshMs)return hit.data;try{return await fetchRcon(guildId)}catch(e){if(hit){hit.error=e.message;return hit.data}throw e;}}
 async function testRcon(guildId){const p=serverProfiles.get(guildId);if(!p)throw Error('Configure the Rust server in /pop setup first');const message=await rconRequest(p,'global.playerlist');const rows=parsePlayers(message);const d={serverName:p.name,current:rows.length,max:null,rows};rconCache.set(guildId,{data:d,at:Date.now(),error:null});return d;}
 const brand=t=>new EmbedBuilder().setColor(PURPLE).setTitle('☢️ '+t).setFooter({text:'RUST CONSOLE POP • Free • approved live source only'}).setTimestamp();
-function dashboard(d,meta={}){const e=brand('NEON POP // '+val(d.serverName)).setDescription('**🟣 LIVE RUST CONSOLE POPULATION**\\n'+(d.current===null?'Population unavailable':'**'+d.current+'** survivors online')+(d.max?' / '+d.max:'')+(cache.error?'\\n⚠️ Last successful snapshot':'')).addFields({name:'📡 Feed',value:cache.error?'Stale':'Connected',inline:true},{name:'🕒 Updated',value:cache.at?'<t:'+Math.floor(cache.at/1000)+':R>':'Unavailable',inline:true},{name:'🧑‍🚀 Player rows',value:String(d.rows.length),inline:true});if(d.rows.length)e.addFields({name:'SURVIVOR SIGNALS',value:d.rows.slice(0,20).map((p,i)=>'**'+(i+1)+'. '+val(p.name,'Survivor')+'**\\n🎮 '+val(p.platform)+' • '+val(p.playing)).join('\\n\\n').slice(0,3900)});else e.addFields({name:'SURVIVOR SIGNALS',value:'The approved source did not provide individual player rows. No names, platforms, avatars, or activities are invented.'});return e;}
+function dashboard(d, meta = {}) {
+  const updated = meta.at || Date.now();
+  const stale = Boolean(meta.error);
+  const count = Number.isFinite(Number(d.current)) ? Number(d.current) : d.rows.length;
+  const e = brand('NEON POP // ' + val(d.serverName))
+    .setDescription('**🟣 LIVE RUST CONSOLE POPULATION**\n' + (count === 0 ? '**0** survivors online\n\n🟢 Server is reachable — nobody is online right now.' : '**' + count + '** survivors online') + (stale ? '\n⚠️ Showing the last successful snapshot.' : ''))
+    .addFields(
+      { name: '📡 RCON feed', value: stale ? '🟠 Stale' : '🟢 Live', inline: true },
+      { name: '🕒 Last checked', value: '<t:' + Math.floor(updated / 1000) + ':R>', inline: true },
+      { name: '🧑‍🚀 Players returned', value: String(d.rows.length), inline: true },
+    );
+  if (d.rows.length) {
+    e.addFields({ name: 'SURVIVORS ONLINE', value: d.rows.slice(0, 20).map((p, i) => '**' + (i + 1) + '. ' + val(p.name, 'Survivor') + '**\n🎮 ' + val(p.platform) + ' • ' + val(p.playing)).join('\n\n').slice(0, 3900) });
+  } else {
+    e.addFields({ name: 'SURVIVORS ONLINE', value: count === 0 ? 'No players are currently connected.' : 'RCON returned no individual player rows.' });
+  }
+  e.addFields({ name: 'SOURCE NOTE', value: 'Population and player details are read from the configured RCON server. No names or activity are invented.' });
+  return e;
+}
+
 const controls=()=>new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('refresh').setLabel('Refresh signal').setEmoji('🔄').setStyle(ButtonStyle.Primary),new ButtonBuilder().setCustomId('status').setLabel('Connection status').setEmoji('📡').setStyle(ButtonStyle.Secondary));
 const setupButtons=(guildId)=>new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('server_add').setLabel(serverProfiles.has(guildId)?'Edit server':'Setup server').setEmoji(serverProfiles.has(guildId)?'🛠️':'🚀').setStyle(ButtonStyle.Primary),new ButtonBuilder().setCustomId('server_view').setLabel('Review setup').setEmoji('📋').setStyle(ButtonStyle.Secondary),new ButtonBuilder().setCustomId('server_clear').setLabel('Disconnect').setEmoji('⛔').setStyle(ButtonStyle.Danger));
 const rconSetupButton=()=>new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('rco_add').setLabel('Add RCON password').setEmoji('🔐').setStyle(ButtonStyle.Primary));
