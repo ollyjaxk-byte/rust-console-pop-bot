@@ -46,11 +46,18 @@ client.on('interactionCreate', async (i) => {
       }
       if (sub === 'test') {
         if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Only the Discord server owner can run the RCON test.', ephemeral: true });
+        const profile = serverProfiles.get(i.guild.id);
+        if (!profile) return i.reply({ content: '⚙️ Run /pop setup first and configure the Rust server.', ephemeral: true });
+        if (!profile.rcoPassword) return i.showModal(credentialModal());
         await i.deferReply({ ephemeral: true });
         try { const d = await testRcon(i.guild.id); return i.editReply({ embeds: [brand('RCON TEST PASSED').setDescription('✅ RCON connected and returned a player list.').addFields({ name: 'Server', value: d.serverName, inline: true }, { name: 'Players returned', value: String(d.current), inline: true }, { name: 'Next', value: 'Run /pop view.' })] }); }
         catch (error) { return i.editReply({ embeds: [brand('RCON TEST FAILED').setColor(RED).setDescription('❌ The bot could not connect or read the player list.').addFields({ name: 'Reason', value: String(error.message).slice(0, 900) }, { name: 'Check', value: 'Verify host/IP, RCON port, password, and provider settings.' })] }); }
       }
       if (sub === 'status') return i.reply({ embeds: [await status()], ephemeral: true });
+      if (!i.guild) return i.reply({ content: 'This command can only be used in a Discord server.', ephemeral: true });
+      const profile = serverProfiles.get(i.guild.id);
+      if (!profile) return i.reply({ content: '⚙️ Run /pop setup first and configure the Rust server.', ephemeral: true });
+      if (!profile.rcoPassword) return i.showModal(credentialModal());
       await i.deferReply();
       try { const d = await getPop(i.guild.id); return i.editReply({ embeds: [dashboard(d, rconCache.get(i.guild.id) || {})], components: [controls()] }); }
       catch (error) { return i.editReply({ embeds: [brand('POP FEED OFFLINE').setColor(RED).setDescription('No live population was displayed.').addFields({ name: 'Reason', value: String(error.message).slice(0, 900) })] }); }
@@ -71,7 +78,7 @@ client.on('interactionCreate', async (i) => {
         serverProfiles.set(i.guild.id, p);
         return i.reply({ content: '✅ Server details saved. Use **Edit server** any time to change them. Add the RCON password to finish the connection.', components: [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('rco_add').setLabel('Add RCON password').setEmoji('🔐').setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId('server_add').setLabel('Edit server').setEmoji('🛠️').setStyle(ButtonStyle.Secondary))], ephemeral: true });
       }
-      if (i.customId === 'credential_modal') { const p = serverProfiles.get(i.guild.id); if (!p) return i.reply({ content: 'Configure server details first.', ephemeral: true }); p.rcoPassword = i.fields.getTextInputValue('rco_password').trim(); serverProfiles.set(i.guild.id, p); return i.reply({ content: '✅ RCON setup complete. Your server is ready. Use **Edit server** from `/pop setup` whenever you need to change the details.', ephemeral: true }); }
+      if (i.customId === 'credential_modal') { const p = serverProfiles.get(i.guild.id); if (!p) return i.reply({ content: 'Configure server details first.', ephemeral: true }); const password = i.fields.getTextInputValue('rco_password').trim(); if (!password) return i.reply({ content: '⚠️ Enter the RCON password before submitting.', ephemeral: true }); p.rcoPassword = password; serverProfiles.set(i.guild.id, p); await i.deferReply({ ephemeral: true }); try { const d = await testRcon(i.guild.id); return i.editReply({ embeds: [brand('RCON CONNECTED').setDescription('✅ Password accepted. RCON connected and the player list is available.').addFields({ name: 'Server', value: d.serverName, inline: true }, { name: 'Players online', value: String(d.current), inline: true }, { name: 'Next', value: 'Run /pop view to open the full player list.' })] }); } catch (error) { p.rcoPassword = undefined; serverProfiles.set(i.guild.id, p); return i.editReply({ embeds: [brand('RCON PASSWORD NOT VERIFIED').setColor(RED).setDescription('The password was saved only for this test, but the server rejected the connection.').addFields({ name: 'Reason', value: String(error.message).slice(0, 900) }, { name: 'Check', value: 'Confirm the RCON password, server IP, RCON port, and that RCON is enabled.' })] }); } }
     }
     if (i.isStringSelectMenu() && i.customId === 'setup') { if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Owner only.', ephemeral: true }); config.set(i.guild.id, i.values[0]); return i.update({ embeds: [brand('SETUP SAVED').setDescription('Automatic updates: **' + i.values[0] + '**')], components: [] }); }
   } catch (error) { console.error('[interaction]', error); if (!i.replied && !i.deferred) await i.reply({ content: '⚠️ Unexpected error. Check hosting logs.', ephemeral: true }); }
