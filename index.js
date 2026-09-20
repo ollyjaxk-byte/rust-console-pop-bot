@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import {Client,GatewayIntentBits,REST,Routes,SlashCommandBuilder,EmbedBuilder,ActionRowBuilder,ButtonBuilder,ButtonStyle,StringSelectMenuBuilder} from 'discord.js';
 for (const k of ['DISCORD_TOKEN','CLIENT_ID']) if (!process.env[k]?.trim()) throw new Error('Missing '+k);
-if (!/^\\d+$/.test(process.env.CLIENT_ID.trim())) throw new Error('CLIENT_ID must be numeric');
+if (!/^\d+$/.test(process.env.CLIENT_ID.trim())) throw new Error('CLIENT_ID must be numeric');
 const PURPLE=0xb026ff, RED=0xed4245, refreshMs=Math.max(30,Number(process.env.RUST_REFRESH_SECONDS||60))*1000;
 const config=new Map(), cache={data:null,at:0,error:null};
 const command=new SlashCommandBuilder().setName('pop').setDescription('Rust Console live population dashboard').addSubcommand(s=>s.setName('view').setDescription('Show live population and available player details')).addSubcommand(s=>s.setName('status').setDescription('Show source connection health')).addSubcommand(s=>s.setName('setup').setDescription('Configure automatic updates; server owner only'));
