@@ -12,5 +12,5 @@
     "dotenv": "^16.6.1",
     "ws": "^8.18.0"
   },
-  "description": "RustPulse Pop — free Rust Console population Discord bot"
+  "description": "test — Rust Console Discord bot"
 }
