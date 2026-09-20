@@ -31,7 +31,7 @@ function dashboard(d, meta = {}) {
   e.addFields({name:'🔒 PRIVACY',value:'Live population and player details only. Server address, port, region, credentials, and private configuration stay hidden.'}); return e;
 }
 
-const controls=()=>new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('refresh').setLabel('Refresh signal').setEmoji('🔄').setStyle(ButtonStyle.Primary),new ButtonBuilder().setCustomId('status').setLabel('Connection status').setEmoji('📡').setStyle(ButtonStyle.Secondary));
+const controls=()=>[new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('refresh').setLabel('Refresh now').setEmoji('🔄').setStyle(ButtonStyle.Primary),new ButtonBuilder().setCustomId('status').setLabel('RCON status').setEmoji('📡').setStyle(ButtonStyle.Secondary),new ButtonBuilder().setCustomId('copyless').setLabel('Privacy mode').setEmoji('🛡️').setStyle(ButtonStyle.Secondary)),new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('view_mode').setPlaceholder('Choose a dashboard view').addOptions({label:'Live roster',value:'roster',emoji:'🧑‍🚀'},{label:'Server pulse',value:'pulse',emoji:'📊'},{label:'How it works',value:'help',emoji:'❔'}))];
 const setupButtons=(guildId)=>new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('server_add').setLabel(serverProfiles.has(guildId)?'Edit server':'Setup server').setEmoji(serverProfiles.has(guildId)?'🛠️':'🚀').setStyle(ButtonStyle.Primary),new ButtonBuilder().setCustomId('server_view').setLabel('Review setup').setEmoji('📋').setStyle(ButtonStyle.Secondary),new ButtonBuilder().setCustomId('server_clear').setLabel('Disconnect').setEmoji('⛔').setStyle(ButtonStyle.Danger));
 const rconSetupButton=()=>new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('rco_add').setLabel('Add RCON password').setEmoji('🔐').setStyle(ButtonStyle.Primary));
 const updateSetup=()=>new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('setup').setPlaceholder('Choose how the live count should appear').addOptions({label:'Off',value:'off',emoji:'⏸️'},{label:'Bot status',value:'bio',emoji:'🟣'},{label:'Channel embed',value:'channel',emoji:'📣'},{label:'Both',value:'both',emoji:'⚡'}));
@@ -68,7 +68,7 @@ client.on('interactionCreate', async (i) => {
       if (!profile) return i.reply({ content: '⚙️ Run /pop setup first and configure the Rust server.', ephemeral: true });
       if (!profile.rconPassword) return i.showModal(credentialModal());
       await i.deferReply();
-      try { const d = await getPop(i.guild.id); return i.editReply({ embeds: [dashboard(d, rconCache.get(i.guild.id) || {})], components: [controls()] }); }
+      try { const d = await getPop(i.guild.id); return i.editReply({ embeds: [dashboard(d, rconCache.get(i.guild.id) || {})], components: controls() }); }
       catch (error) { return i.editReply({ embeds: [brand('POP FEED OFFLINE').setColor(RED).setDescription('No live population was displayed.').addFields({ name: 'Reason', value: String(error.message).slice(0, 900) })] }); }
     }
     if (i.isButton()) {
@@ -77,8 +77,12 @@ client.on('interactionCreate', async (i) => {
       if (i.customId === 'server_view') { if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Owner only.', ephemeral: true }); const p = serverProfiles.get(i.guild.id); return i.reply({ embeds: [p ? profileCard(p) : brand('NO SERVER PROFILE').setDescription('Configure a server first.')], ephemeral: true }); }
       if (i.customId === 'server_clear') { if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Owner only.', ephemeral: true }); serverProfiles.delete(i.guild.id); return i.reply({ content: '🗑️ Rust server profile cleared from memory.', ephemeral: true }); }
       if (i.customId === 'status') return i.reply({ embeds: [await status()], ephemeral: true });
-      if (i.customId === 'refresh') { await i.deferUpdate(); try { const d = await fetchRcon(i.guild.id); return i.editReply({ embeds: [dashboard(d, rconCache.get(i.guild.id) || {})], components: [controls()] }); } catch (error) { return i.followUp({ content: '⚠️ Live refresh failed: ' + String(error.message).slice(0, 900), ephemeral: true }); } }
+      if (i.customId === 'refresh') { await i.deferUpdate(); try { const d = await fetchRcon(i.guild.id); return i.editReply({ embeds: [dashboard(d, rconCache.get(i.guild.id) || {})], components: controls() }); } catch (error) { return i.followUp({ content: '⚠️ Live refresh failed: ' + String(error.message).slice(0, 900), ephemeral: true }); } }
     }
+    if (i.isStringSelectMenu() && i.customId === 'view_mode') { const mode = i.values[0]; if (mode === 'help') return i.reply({ embeds: [brand('POP // FIELD GUIDE').setDescription('🟣 **Live roster** shows player rows returned by RCON.
+📊 **Server pulse** shows capacity, queue, and map when the server provides them.
+🛡️ **Privacy mode** keeps connection details out of public embeds.')], ephemeral: true }); const cached = rconCache.get(i.guild.id)?.data; if (!cached) return i.reply({ content: 'Run /pop view first to load the live signal.', ephemeral: true }); if (mode === 'pulse') return i.update({ embeds: [brand('📊 SERVER PULSE').setDescription('**Rust Console operational snapshot**').addFields({name:'Online',value:String(cached.current),inline:true},{name:'Capacity',value:val(cached.max,'Not returned'),inline:true},{name:'Queue',value:val(cached.queue,'Not returned'),inline:true},{name:'Map',value:val(cached.map,'Not returned')},{name:'Checks',value:'server.info '+(cached.checks?.serverInfo?'✅':'—')+'  playerlist '+(cached.checks?.playerlist?'✅':'❌')+'  status '+(cached.checks?.status?'✅':'—')+'  users '+(cached.checks?.users?'✅':'—')})], components: controls() }); return i.update({ embeds: [dashboard(cached, rconCache.get(i.guild.id) || {})], components: controls() }); }
+    if (i.isButton() && i.customId === 'copyless') return i.reply({ embeds: [brand('🛡️ PRIVACY MODE').setDescription('Public panels show population and returned player details only. IP, port, region, credentials, and private server configuration remain hidden.')], ephemeral: true });
     if (i.isModalSubmit()) {
       if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Only the Discord server owner can change setup.', ephemeral: true });
       if (i.customId === 'server_modal') {
