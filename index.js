@@ -150,7 +150,7 @@ client.on('interactionCreate', async (i) => {
     if (i.isStringSelectMenu() && i.customId === 'setup') { if (!staffOnly(i)) return; config.set(i.guild.id, i.values[0]); return i.update({ embeds: [brand('SETUP SAVED').setDescription('Automatic updates: **' + i.values[0] + '**')], components: [] }); }
   } catch (error) { console.error('[interaction]', error); const message='⚠️ RustPulse Pop could not complete that request. No private credentials were exposed.'; try { if (!i.replied && !i.deferred) await i.reply({content:message,ephemeral:true}); else if (i.deferred) await i.editReply({content:message,embeds:[],components:[]}); } catch (replyError) { console.error('[interaction-reply]', replyError.message); } }
 });
-client.once('clientReady', () => {
+client.once('ready', () => {
   console.log('RustPulse Pop online as ' + client.user.tag);
   setInterval(async () => {
     for (const [guildId, mode] of config) {
