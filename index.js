@@ -27,8 +27,8 @@ const setupButtons=()=>new ActionRowBuilder().addComponents(new ButtonBuilder().
 const updateSetup=()=>new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('setup').setPlaceholder('Choose automatic update mode').addOptions({label:'Off',value:'off',emoji:'⏸️'},{label:'Bot status',value:'bio',emoji:'🟣'},{label:'Channel embed',value:'channel',emoji:'📣'},{label:'Both',value:'both',emoji:'⚡'}));
 const serverModal=()=>new ModalBuilder().setCustomId('server_modal').setTitle('🧰 Rust Console Server Setup').addComponents(
  new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('server_name').setLabel('Rust server name').setPlaceholder('My Rust Console server').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100)),
- new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('host').setLabel('Host / domain').setPlaceholder('console.example.com').setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(150)),
- new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ip').setLabel('IP and port').setPlaceholder('123.123.123.123:28015').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(80)),
+ new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ip').setLabel('Rust server IP').setPlaceholder('203.0.113.10').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(80)),
+ new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('rcon_port').setLabel('WebRCON port').setPlaceholder('28016').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(10)),
  new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('region').setLabel('Region').setPlaceholder('EU, US, AU, etc.').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(40)),
  new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('description').setLabel('Description (optional)').setPlaceholder('A short description for this server').setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(500))
 );
@@ -65,8 +65,8 @@ client.on('interactionCreate', async (i) => {
     if (i.isModalSubmit()) {
       if (i.guild?.ownerId !== i.user.id) return i.reply({ content: '🔒 Only the Discord server owner can change setup.', ephemeral: true });
       if (i.customId === 'server_modal') {
-        const p = { name: i.fields.getTextInputValue('server_name').trim(), host: i.fields.getTextInputValue('host').trim(), ip: i.fields.getTextInputValue('ip').trim(), region: i.fields.getTextInputValue('region').trim(), description: i.fields.getTextInputValue('description').trim() };
-        if (!/^([\\w.-]+|\\d{1,3}(?:\\.\\d{1,3}){3})(?::\\d{1,5})?$/.test(p.ip)) return i.reply({ content: '⚠️ Enter a valid host/IP with optional port, for example 203.0.113.10:28016.', ephemeral: true });
+        const p = { name: i.fields.getTextInputValue('server_name').trim(), ip: i.fields.getTextInputValue('ip').trim(), rconPort: i.fields.getTextInputValue('rcon_port').trim(), region: i.fields.getTextInputValue('region').trim(), description: i.fields.getTextInputValue('description').trim() };
+        if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(p.ip)) return i.reply({ content: '⚠️ Enter the Rust server IPv4 address only, for example 203.0.113.10.', ephemeral: true }); if (!/^\d{1,5}$/.test(p.rconPort) || Number(p.rconPort) < 1 || Number(p.rconPort) > 65535) return i.reply({ content: '⚠️ Enter a valid WebRCON port.', ephemeral: true });
         serverProfiles.set(i.guild.id, p);
         return i.reply({ content: '✅ Server details saved. Add the private WebRCON password to finish.', components: [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('rco_add').setLabel('Add WebRCON password').setEmoji('🔐').setStyle(ButtonStyle.Primary))], ephemeral: true });
       }
