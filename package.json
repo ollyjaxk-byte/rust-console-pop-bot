@@ -1,1 +1,15 @@
-{"name":"rust-console-pop-bot","version":"1.0.0","type":"module","license":"MIT","scripts":{"start":"node index.js","check":"node --check index.js"},"dependencies":{"discord.js":"^14.22.1","dotenv":"^16.6.1"}}
+{
+  "name": "rust-console-pop-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.22.1",
+    "dotenv": "^16.6.1",
+    "ws": "^8.18.0"
+  }
+}
