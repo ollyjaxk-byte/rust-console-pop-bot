@@ -60,7 +60,7 @@ async function status(){const e=brand('POP STATUS').addFields({name:'Source conf
 client.on('interactionCreate', async (i) => {
   try {
     if (i.isChatInputCommand()) {
-      const sub = i.options.getSubcommand();
+      const sub = i.commandName === 'pop' ? i.options.getSubcommand() : null;
       if (i.commandName === 'terms') return i.reply({embeds:[termsEmbed()],components:[infoControls(),infoSections()],ephemeral:true});
       if (i.commandName === 'rules') return i.reply({embeds:[rulesEmbed()],components:[infoControls(),infoSections()],ephemeral:false});
       if (i.commandName === 'searchplayer') { if (!i.guild) return i.reply({content:'This command can only be used in a server.',ephemeral:true}); if (!i.memberPermissions?.has('ManageGuild') && i.guild.ownerId !== i.user.id) return i.reply({content:'🔒 Managers and the server owner only.',ephemeral:true}); const q=i.options.getString('username',true).trim(); if(!serverProfiles.get(i.guild.id)) return i.reply({content:'⚙️ Run /pop setup first.',ephemeral:true}); if(!serverProfiles.get(i.guild.id).rconPassword) return i.showModal(credentialModal()); await i.deferReply({ephemeral:true}); try {const p=await searchPlayer(i.guild.id,q); if(!p)return i.editReply({embeds:[brand('🔎 NO ACTIVE MATCH').setDescription('No connected player matched '+q+'.') ]}); const msg=await i.editReply({embeds:[searchCard(p,q)],components:[searchControls()]}); searchPanels.set(msg.id,{guildId:i.guild.id,query:q,ownerId:i.user.id});} catch(error){return i.editReply({embeds:[brand('🔎 SEARCH UNAVAILABLE').setColor(RED).setDescription('The live player list could not be read.').addFields({name:'Reason',value:String(error.message).slice(0,900)})]});} return; }
